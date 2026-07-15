@@ -150,12 +150,18 @@ function showLocalPreview(file) {
 
 function initGoogleDrive() {
   var statusEl = document.getElementById("driveStatus");
-  statusEl.textContent = "Loading Google API...";
   statusEl.style.display = "block";
+  statusEl.innerHTML = '<span class="info">Loading Google API...</span>';
 
   var gapiScript = document.createElement("script");
   gapiScript.src = "https://apis.google.com/js/api.js";
+  gapiScript.async = true;
+  gapiScript.defer = true;
   gapiScript.onload = function() {
+    if (typeof gapi === "undefined") {
+      statusEl.innerHTML = '<span class="warn">Google API not loaded. Check internet. </span><button class="btn-sm" onclick="initGoogleDrive()">Retry</button>';
+      return;
+    }
     gapiLoaded = true;
     gapi.load("client:picker", function() {
       gapi.client.init({
@@ -165,17 +171,17 @@ function initGoogleDrive() {
         scope: "https://www.googleapis.com/auth/drive.file"
       }).then(function() {
         checkDriveConnection();
+      }).catch(function(err) {
+        console.error("GAPI init error:", err);
+        statusEl.innerHTML = '<span class="warn">Google API init failed. </span><button class="btn-sm" onclick="initGoogleDrive()">Retry</button>';
       });
     });
   };
-  document.head.appendChild(gapiScript);
-
-  var gisScript = document.createElement("script");
-  gisScript.src = "https://accounts.google.com/gsi/client";
-  gisScript.onload = function() {
-    gisLoaded = true;
+  gapiScript.onerror = function() {
+    console.error("Failed to load Google API script");
+    statusEl.innerHTML = '<span class="warn">Failed to load Google API. Check internet. </span><button class="btn-sm" onclick="initGoogleDrive()">Retry</button>';
   };
-  document.head.appendChild(gisScript);
+  document.head.appendChild(gapiScript);
 }
 
 function checkDriveConnection() {
