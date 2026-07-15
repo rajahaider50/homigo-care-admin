@@ -113,7 +113,7 @@ function checkAuth(){
   }else{
     log('Not logged in','warn');
     log('Try logging in first...','info');
-    auth.signInWithEmailAndPassword('admin@homigo.care','test123').then(function(result){
+    auth.signInWithEmailAndPassword('admin@gmail.com','test123').then(function(result){
       log('Login successful!','success');
       log('UID: '+result.user.uid,'info');
       checkAdminRecord(result.user.uid);
@@ -135,7 +135,7 @@ function checkAdminRecord(uid){
       log('  Role: '+(data.role||'N/A'),'info');
     }else{
       log('Admin record NOT found - creating one...','warn');
-      db.ref('admin/'+uid).set({name:'Admin',email:'admin@homigo.care',role:'superadmin',createdAt:Date.now()}).then(function(){
+      db.ref('admin/'+uid).set({name:'Admin',email:'admin@gmail.com',role:'superadmin',createdAt:Date.now()}).then(function(){
         log('Admin record created!','success');
         log('Now try loading splash data again','info');
       }).catch(function(err){
