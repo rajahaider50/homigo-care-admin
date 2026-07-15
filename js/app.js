@@ -9,7 +9,7 @@ var firebaseConfig = {
   measurementId: "G-JJ1Q1HDRV8"
 };
 
-var ADMIN_EMAIL = "admin@gmail.com";
+var ADMIN_EMAIL = "zarghamabbas859@gmail.com";
 var DRIVE_FOLDER_ID = "1LnDE01yLQh_XemGR4-PgyZZM0loQxVA6";
 
 firebase.initializeApp(firebaseConfig);
@@ -33,7 +33,7 @@ function adminLogin() {
     return;
   }
   if (email !== ADMIN_EMAIL) {
-    errorEl.textContent = "Sirf admin@gmail.com se login karein";
+    errorEl.textContent = "Sirf zarghamabbas859@gmail.com se login karein";
     errorEl.style.display = "block";
     return;
   }
