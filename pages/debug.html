@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homigo Care - Debug Console</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }
+    h1 { color: #58a6ff; margin-bottom: 20px; font-size: 20px; }
+    .section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .section h2 { color: #8b949e; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; }
+    .log { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .log .info { color: #58a6ff; }
+    .log .success { color: #3fb950; }
+    .log .error { color: #f85149; }
+    .log .warn { color: #d29922; }
+    .btn { background: #238636; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
+    .btn:hover { background: #2ea043; }
+    .btn-danger { background: #da3633; }
+    .btn-danger:hover { background: #f85149; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table td { padding: 8px; border-bottom: 1px solid #30363d; }
+    .data-table td:first-child { color: #8b949e; width: 120px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-active { background: #238636; color: #fff; }
+    .badge-inactive { background: #30363d; color: #8b949e; }
+    .url-preview { word-break: break-all; color: #58a6ff; font-size: 12px; margin-top: 8px; }
+    #testVideo { max-width: 400px; margin-top: 12px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Homigo Care - Debug Console</h1>
+  
+  <div class="section">
+    <h2>Firebase Connection</h2>
+    <button class="btn" onclick="testConnection()">Test Connection</button>
+    <button class="btn" onclick="checkAuth()">Check Auth</button>
+    <button class="btn" onclick="checkRules()">Check Rules</button>
+    <div class="log" id="connectionLog">Ready...</div>
+  </div>
+
+  <div class="section">
+    <h2>Splash Data</h2>
+    <button class="btn" onclick="loadSplashData()">Load Splash Data</button>
+    <button class="btn" onclick="testVideoUrl()">Test Video URL</button>
+    <div id="splashDataDisplay"></div>
+    <div class="log" id="splashLog">Ready...</div>
+  </div>
+
+  <div class="section">
+    <h2>Video Test</h2>
+    <div id="videoTestArea">
+      <p style="color:#8b949e;">Enter a video URL to test:</p>
+      <input type="text" id="testVideoUrl" style="width:100%;padding:10px;margin:8px 0;background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;font-family:monospace;" placeholder="https://example.com/video.mp4">
+      <button class="btn" onclick="testVideoUrl()">Test This URL</button>
+      <video id="testVideo" style="display:none;" controls></video>
+      <div id="videoTestResult"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Quick Fix</h2>
+    <button class="btn btn-danger" onclick="clearBrokenSplash()">Clear Broken Splash Data</button>
+    <button class="btn" onclick="setTestSplash()">Set Test Splash (Text)</button>
+    <div class="log" id="fixLog">Ready...</div>
+  </div>
+
+<script>
+var firebaseConfig={apiKey:"AIzaSyCP3dUminDU_wI1BzfXnwAW20Vk_COkUbc",authDomain:"homigo-care-76e21.firebaseapp.com",databaseURL:"https://homigo-care-76e21-default-rtdb.firebaseio.com",projectId:"homigo-care-76e21",storageBucket:"homigo-care-76e21.firebasestorage.app",messagingSenderId:"682545900180",appId:"1:682545900180:web:556b2ca1226f8ccfcfa281",measurementId:"G-JJ1Q1HDRV8"};
+firebase.initializeApp(firebaseConfig);
+var auth=firebase.auth();
+var db=firebase.database();
+
+function log(msg,type,logId){
+  logId=logId||'connectionLog';
+  var el=document.getElementById(logId);
+  var cls=type||'info';
+  el.innerHTML=el.innerHTML+'\n<span class="'+cls+'">['+new Date().toLocaleTimeString()+'] '+msg+'</span>';
+  el.scrollTop=el.scrollHeight;
+}
+
+function testConnection(){
+  log('Testing Firebase connection...','info');
+  db.ref('.info/connected').once('value').then(function(snap){
+    if(snap.val()){
+      log('Connected to Firebase!','success');
+    }else{
+      log('Not connected to Firebase','error');
+    }
+  }).catch(function(err){
+    log('Connection error: '+err.message,'error');
+  });
+}
+
+function checkAuth(){
+  log('Checking authentication...','info');
+  var user=auth.currentUser;
+  if(user){
+    log('Logged in as: '+user.email,'success');
+    log('UID: '+user.uid,'info');
+    db.ref('admin/'+user.uid).once('value').then(function(snap){
+      if(snap.exists()){
+        log('Admin record exists: YES','success');
+      }else{
+        log('Admin record exists: NO - This may cause permission denied!','error');
+      }
+    });
+  }else{
+    log('Not logged in','warn');
+    log('Try logging in first...','info');
+    auth.signInWithEmailAndPassword('zarghamabbas859@gmail.com','test123').then(function(result){
+      log('Login successful!','success');
+      log('UID: '+result.user.uid,'info');
+      checkAdminRecord(result.user.uid);
+    }).catch(function(err){
+      log('Login failed: '+err.message,'error');
+      log('Note: You need to use the correct password','warn');
+    });
+  }
+}
+
+function checkAdminRecord(uid){
+  log('Checking admin record for: '+uid,'info');
+  db.ref('admin/'+uid).once('value').then(function(snap){
+    if(snap.exists()){
+      var data=snap.val();
+      log('Admin record found:','success');
+      log('  Name: '+(data.name||'N/A'),'info');
+      log('  Email: '+(data.email||'N/A'),'info');
+      log('  Role: '+(data.role||'N/A'),'info');
+    }else{
+      log('Admin record NOT found - creating one...','warn');
+      db.ref('admin/'+uid).set({name:'Admin',email:'zarghamabbas859@gmail.com',role:'superadmin',createdAt:Date.now()}).then(function(){
+        log('Admin record created!','success');
+        log('Now try loading splash data again','info');
+      }).catch(function(err){
+        log('Failed to create admin record: '+err.message,'error');
+      });
+    }
+  });
+}
+
+function checkRules(){
+  log('Testing Firebase rules...','info');
+  log('Attempting to read /splash/current...','info');
+  db.ref('splash/current').once('value').then(function(snap){
+    log('SUCCESS: Can read /splash/current','success');
+    var data=snap.val();
+    if(data){
+      log('Data: '+JSON.stringify(data).substring(0,200),'info');
+    }else{
+      log('No data found (empty)','warn');
+    }
+  }).catch(function(err){
+    log('FAILED: '+err.message,'error');
+    log('This means your Firebase rules are blocking access!','error');
+    log('Go to Firebase Console > Realtime Database > Rules and paste the rules from firebase-rules.txt','warn');
+  });
+  
+  log('Attempting to read /splash/history...','info');
+  db.ref('splash/history').limitToLast(5).once('value').then(function(snap){
+    log('SUCCESS: Can read /splash/history','success');
+    log('Found '+snap.numChildren()+' history entries','info');
+  }).catch(function(err){
+    log('FAILED: '+err.message,'error');
+  });
+}
+
+function loadSplashData(){
+  log('Loading splash data...','info');
+  var display=document.getElementById('splashDataDisplay');
+  display.innerHTML='<p style="color:#8b949e;">Loading...</p>';
+  
+  db.ref('splash/current').once('value').then(function(snap){
+    var data=snap.val();
+    if(!data){
+      display.innerHTML='<p style="color:#d29922;">No splash data found</p>';
+      log('No splash data in database','warn');
+      return;
+    }
+    
+    var html='<table class="data-table">';
+    html+='<tr><td>Type:</td><td><strong>'+data.type+'</strong></td></tr>';
+    html+='<tr><td>Content:</td><td><span class="url-preview">'+data.content+'</span></td></tr>';
+    html+='<tr><td>Duration:</td><td>'+(data.duration/1000)+'s</td></tr>';
+    html+='<tr><td>Active:</td><td><span class="badge '+(data.isActive?'badge-active':'badge-inactive')+'">'+data.isActive+'</span></td></tr>';
+    html+='<tr><td>Updated:</td><td>'+new Date(data.updatedAt).toLocaleString()+'</td></tr>';
+    html+='</table>';
+    
+    if(data.type==='video'||data.type==='image'){
+      html+='<p style="margin-top:12px;"><strong>URL Analysis:</strong></p>';
+      var url=data.content;
+      if(url.indexOf('blob:')===0){
+        html+='<p class="error">ERROR: This is a BLOB URL! It will NOT work in other browsers.</p>';
+        html+='<p>Blob URLs only work in the browser that created them.</p>';
+        log('PROBLEM: URL is a blob URL - will not work!','error');
+      }else if(url.indexOf('http')===0){
+        html+='<p class="success">URL looks valid (starts with http)</p>';
+        log('URL looks valid','success');
+      }else{
+        html+='<p class="error">ERROR: URL does not start with http</p>';
+        log('URL format problem','error');
+      }
+    }
+    
+    display.innerHTML=html;
+    log('Splash data loaded successfully','success');
+  }).catch(function(err){
+    display.innerHTML='<p class="error">Error: '+err.message+'</p>';
+    log('Error loading splash: '+err.message,'error');
+  });
+}
+
+function testVideoUrl(){
+  var url=document.getElementById('testVideoUrl').value.trim();
+  if(!url){
+    log('Enter a URL to test','warn','splashLog');
+    return;
+  }
+  
+  log('Testing video URL: '+url,'info','splashLog');
+  var video=document.getElementById('testVideo');
+  video.style.display='block';
+  video.src=url;
+  
+  video.onloadeddata=function(){
+    log('SUCCESS: Video loaded! Duration: '+video.duration+'s','success','splashLog');
+    document.getElementById('videoTestResult').innerHTML='<span class="success">Video works!</span>';
+  };
+  
+  video.onerror=function(e){
+    log('ERROR: Video failed to load','error','splashLog');
+    log('Error code: '+video.error.code,'error','splashLog');
+    var reasons={1:'Aborted',2:'Network error',3:'Decode error',4:'Format not supported'};
+    log('Reason: '+(reasons[video.error.code]||'Unknown'),'error','splashLog');
+    document.getElementById('videoTestResult').innerHTML='<span class="error">Video failed: '+(reasons[video.error.code]||'Unknown error')+'</span>';
+  };
+}
+
+function clearBrokenSplash(){
+  log('Clearing broken splash data...','warn','fixLog');
+  if(!auth.currentUser){
+    log('Not logged in - login first','error','fixLog');
+    return;
+  }
+  db.ref('splash/current').set({type:'text',content:'Homigo Care',duration:5000,isActive:false,updatedAt:Date.now(),updatedBy:auth.currentUser.uid}).then(function(){
+    log('Broken splash cleared!','success','fixLog');
+    log('Now set a proper splash from admin panel','info','fixLog');
+    loadSplashData();
+  }).catch(function(err){
+    log('Failed: '+err.message,'error','fixLog');
+  });
+}
+
+function setTestSplash(){
+  log('Setting test splash (text type)...','info','fixLog');
+  if(!auth.currentUser){
+    log('Not logged in - login first','error','fixLog');
+    return;
+  }
+  db.ref('splash/current').set({type:'text',content:'Welcome to Homigo Care!',duration:5000,isActive:true,updatedAt:Date.now(),updatedBy:auth.currentUser.uid}).then(function(){
+    log('Test splash set!','success','fixLog');
+    loadSplashData();
+  }).catch(function(err){
+    log('Failed: '+err.message,'error','fixLog');
+  });
+}
+
+log('Debug Console loaded','info');
+log('Click buttons above to diagnose issues','info');
+</script>
+</body>
+</html>
