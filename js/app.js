@@ -483,4 +483,52 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
+
+  window.addEventListener("error", function(e) {
+    showErrorToast(e.message + " (Line: " + e.lineno + ")");
+  });
+
+  window.addEventListener("unhandledrejection", function(e) {
+    showErrorToast("Promise rejection: " + (e.reason ? e.reason.message : "Unknown error"));
+  });
 });
+
+function showErrorToast(message) {
+  var toast = document.getElementById("errorToast");
+  var msgEl = document.getElementById("errorMessage");
+  var copyBtn = document.getElementById("copyErrorBtn");
+  msgEl.textContent = message;
+  toast.classList.add("show");
+  copyBtn.classList.remove("copied");
+  copyBtn.querySelector("span").textContent = "Copy Error";
+}
+
+function hideErrorToast() {
+  document.getElementById("errorToast").classList.remove("show");
+}
+
+function copyError() {
+  var message = document.getElementById("errorMessage").textContent;
+  var copyBtn = document.getElementById("copyErrorBtn");
+  navigator.clipboard.writeText(message).then(function() {
+    copyBtn.classList.add("copied");
+    copyBtn.querySelector("span").textContent = "Copied!";
+    setTimeout(function() {
+      copyBtn.classList.remove("copied");
+      copyBtn.querySelector("span").textContent = "Copy Error";
+    }, 2000);
+  }).catch(function() {
+    var textarea = document.createElement("textarea");
+    textarea.value = message;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    copyBtn.classList.add("copied");
+    copyBtn.querySelector("span").textContent = "Copied!";
+    setTimeout(function() {
+      copyBtn.classList.remove("copied");
+      copyBtn.querySelector("span").textContent = "Copy Error";
+    }, 2000);
+  });
+}

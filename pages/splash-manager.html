@@ -146,6 +146,24 @@
     <span id="toastMsg">Success</span>
   </div>
 
+  <!-- Error Notification with Copy Button -->
+  <div class="error-toast" id="errorToast">
+    <div class="error-toast-header">
+      <div class="error-toast-title">
+        <ion-icon name="alert-circle"></ion-icon>
+        <span>Error</span>
+      </div>
+      <button class="error-toast-close" onclick="hideErrorToast()">&times;</button>
+    </div>
+    <div class="error-toast-message" id="errorMessage"></div>
+    <div class="error-toast-actions">
+      <button class="error-toast-copy" id="copyErrorBtn" onclick="copyError()">
+        <ion-icon name="copy"></ion-icon>
+        <span>Copy Error</span>
+      </button>
+    </div>
+  </div>
+
   <script src="../js/app.js"></script>
 </body>
 </html>
